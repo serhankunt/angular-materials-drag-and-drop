@@ -1,3 +1,5 @@
+import { CdkDragDrop, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
+import { HttpClient } from '@angular/common/http';
 import { Component } from '@angular/core';
 
 @Component({
@@ -6,5 +8,68 @@ import { Component } from '@angular/core';
   styleUrls: ['./app.component.css']
 })
 export class AppComponent {
-  title = 'angular-materials-drag-and-drop';
+ todos: TodoModel[] = []
+
+todo : TodoModel[] = [];
+done : TodoModel[] = [];
+
+constructor( private http:HttpClient){
+  this.getAll();
+}
+
+getAll(){
+  this.http.get<TodoModel[]>("https://localhost:7098/api/Todos/GetAll").subscribe(res=>{
+    this.todos = res ; 
+    this.splitTodosToTodoAndDone();
+   
+  })
+}
+
+splitTodosToTodoAndDone(){
+  this.todo = [];
+  this.done = [];
+  if(Array.isArray(this.todos)){
+    for(let t of this.todos){
+      if(t.isCompleted) this.done.push(t);
+      else this.todo.push(t);
+    }
+  }
+ 
+
+}
+  
+  changeCompleted(id:number){
+    this.http.get<TodoModel[]>(`https://localhost:7098/api/Todos/ChangeCompleted/${id}`).subscribe(res=>{
+      this.todos = res;
+      this.splitTodosToTodoAndDone();
+      this.getAll();
+      
+    })
+  }
+
+  drop1(event: CdkDragDrop<TodoModel[]>) {
+    if (event.previousContainer === event.container) {
+      moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
+    } else {
+      const id = this.done[event.previousIndex].id;
+      this.changeCompleted(id);
+      
+     
+   
+    }
+  }
+  drop2(event: CdkDragDrop<TodoModel[]>) {
+    if (event.previousContainer === event.container) {
+      moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
+    } else {
+      const id = this.todo[event.previousIndex].id;
+      this.changeCompleted(id);
+      
+    }
+  }
+}
+export class TodoModel{
+  id:number = 0 ;
+  work:string = "";
+  isCompleted: boolean = false;
 }
